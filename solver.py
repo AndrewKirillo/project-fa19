@@ -130,12 +130,12 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
 
 
     ################Setting Objective###############
-    m.setObjective((2.0/3.0)*quicksum(edge_vars[e]*adjacency_matrix[e[0]][e[1]] for e in E) + quicksum(quicksum(ta_vars[t,l]*sp_distances[t][l] for l in range(num_locations)) for t in range(num_homes)), GRB.MINIMIZE)
+    m.setObjective((2.0/3.0)*quicksum(edge_vars[e]*int(adjacency_matrix[e[0]][e[1]]) for e in E) + quicksum(quicksum(ta_vars[t,l]*sp_distances[t][l] for l in range(num_locations)) for t in range(num_homes)), GRB.MINIMIZE)
     
     m.optimize()
 
     for v in m.getVars():
-        print(v, v.x)
+        vars_to_output(E, adjacency_matrix, start_node, edge_vars)
 
 
 """

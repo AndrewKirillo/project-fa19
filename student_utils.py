@@ -1,6 +1,6 @@
 import networkx as nx
 import numpy as np
-
+from gurobipy import *
 
 def decimal_digits_check(number):
     number = str(number)
@@ -112,5 +112,10 @@ def convert_locations_to_indices(list_to_convert, list_of_locations):
     return [list_of_locations.index(name) if name in list_of_locations else None for name in list_to_convert]
 
 
-def vars_to_output(edge_vars, ta_vars, flow_vars, start_node):
-    # walk edges from start making sure not 
+def vars_to_output(E, adjacency_matrix, start_node, edge_vars):
+    G = nx.Graph()
+    for edge in E:
+        if edge_vars[edge].x == 1:
+            G.add_edge(edge[0], edge[1], weight=int(adjacency_matrix[edge[0]][edge[1]]))
+    
+    return list(nx.eulerian_circuit(G, source=start_node))
