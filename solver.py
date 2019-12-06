@@ -64,7 +64,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     edge_vars = {}
 
     for edge in E:
-        edge_vars[edge] = m.addVar(vtype=GRB.BINARY)
+        edge_vars[edge] = m.addVar(name="e_"+str(edge), vtype=GRB.BINARY)
 
     
     # TA dropoff variables.
@@ -73,7 +73,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
 
     for t in range(num_homes):
         for l in range(num_locations):
-            ta_vars[t,l] = m.addVar(vtype=GRB.BINARY)
+            ta_vars[t,l] = m.addVar(name="ta_"+str(t)+"@"+str(list_of_locations[l]), vtype=GRB.BINARY)
     
     
     # Edge flow variables.
@@ -81,9 +81,9 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     flow_vars = {}
 
     for edge in E:
-        flow_vars[edge] = m.addVar(vtype=GRB.BINARY)
-    flow_vars[('s', start_node)] = m.addVar(vtype=GRB.INTEGER)
-    flow_vars[(start_node, 't')] = m.addVar(vtype=GRB.INTEGER)
+        flow_vars[edge] = m.addVar(name="flow_"+str(edge), vtype=GRB.BINARY)
+    flow_vars[('s', start_node)] = m.addVar(name="flow_source", vtype=GRB.INTEGER)
+    flow_vars[(start_node, 't')] = m.addVar(name="flow_target", vtype=GRB.INTEGER)
 
     
     ################# CONSTRAINTS #################
@@ -118,8 +118,13 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     m.addConstr(flow_vars['s', start_node] == quicksum(flow_vars[start_node, v] if (start_node, v) in E else 0 for v in range(num_locations)), "flow_start")
     m.addConstr(flow_vars[start_node, 't'] == quicksum(flow_vars[u, start_node] if (u, start_node) in E else 0 for u in range(num_locations)), "flow_end")
 
+    # Flow is non-negative
+    for edge in E:
+        m.addConstr(flow_vars[edge] >= 0, "non-negative flow " + str(edge))
+    m.addConstr(flow_vars['s', start_node] >= 0, "non-negative source flow")
+    m.addConstr(flow_vars[start_node, 't'] >= 0, "non-negative target flow")
+    
     # Edge included => Flow == 1 == Inclusion Variable
-
     for edge in E:
         m.addConstr(flow_vars[edge] == edge_vars[edge], "inclusion_implies_flow")
 
@@ -128,6 +133,9 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     m.setObjective((2.0/3.0)*quicksum(edge_vars[e]*adjacency_matrix[e[0]][e[1]] for e in E) + quicksum(quicksum(ta_vars[t,l]*sp_distances[t][l] for l in range(num_locations)) for t in range(num_homes)), GRB.MINIMIZE)
     
     m.optimize()
+
+    for v in m.getVars():
+        print(v, v.x)
 
 
 """
