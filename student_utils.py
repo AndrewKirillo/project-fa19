@@ -113,9 +113,40 @@ def convert_locations_to_indices(list_to_convert, list_of_locations):
 
 
 def vars_to_output(E, adjacency_matrix, start_node, edge_vars):
-    G = nx.Graph()
+    G_out = nx.DiGraph()
+    num_edges_in_path = 0
     for edge in E:
         if edge_vars[edge].x == 1:
-            G.add_edge(edge[0], edge[1], weight=int(adjacency_matrix[edge[0]][edge[1]]))
+            num_edges_in_path += 1
+            G_out.add_edge(edge[0], edge[1], weight=int(adjacency_matrix[edge[0]][edge[1]]))
     
-    return list(nx.eulerian_circuit(G, source=start_node))
+    print(num_edges_in_path, G_out.number_of_edges(), G_out.number_of_nodes())
+    nx.draw(G_out)
+    # return list(nx.eulerian_circuit(G, source=start_node))
+
+
+def make_gadget_graph(G):
+    real_nodes = list(G.nodes)
+    real_edges = list(G.edges)
+    G_mod = nx.DiGraph()
+
+    # Create gadget for every node
+    for node in real_nodes:
+        mid_L = str(node)+"_mid_L"
+        mid_R = str(node)+"_mid_R"
+        out = str(node)+"_out"
+        G_mod.add_node(node)
+        G_mod.add_node(mid_L)
+        G_mod.add_node(mid_R)
+        G_mod.add_node(out)
+        G_mod.add_edge(node, mid_L)
+        G_mod.add_edge(node, mid_R)
+        G_mod.add_edge(mid_L, out)
+        G_mod.add_edge(mid_R, out)
+    
+    # Connect graph
+    for edge in real_edges:
+        G_mod.add_edge(str(edge[0])+"_out", edge[1])
+    
+    return G_mod
+
